@@ -25,7 +25,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="down" ref={ref} {...props} />;
 });
 
-const TaskCard = ({ title, onDelete }) => {
+const TaskCard = ({ title, onDelete, onAddSubtask }) => {
   const [openSubtaskDialog, setOpenSubtaskDialog] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [subtasks, setSubtasks] = useState([]);
@@ -43,13 +43,13 @@ const TaskCard = ({ title, onDelete }) => {
     setSubtaskTitle(event.target.value);
   };
 
-  const handleCreateSubtask = () => {
-    if (subtaskTitle.trim() !== "") {
-      setSubtasks([...subtasks, subtaskTitle]);
-      setSubtaskTitle("");
-      setOpenSubtaskDialog(false);
-    }
-  };
+  // const handleCreateSubtask = () => {
+  //   if (subtaskTitle.trim() !== "") {
+  //     setSubtasks([...subtasks, subtaskTitle]);
+  //     setSubtaskTitle("");
+  //     setOpenSubtaskDialog(false);
+  //   }
+  // };
 
   return (
     <div className="card" ref={containerRef}>
@@ -91,7 +91,7 @@ const TaskCard = ({ title, onDelete }) => {
           <Button onClick={handleSubtaskDialogClose} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleCreateSubtask} color="primary">
+          <Button onClick={onAddSubtask} color="primary">
             Create
           </Button>
         </DialogActions>
@@ -125,10 +125,20 @@ const TaskCard = ({ title, onDelete }) => {
   );
 };
 
-export const TaskAndList = () => {
+{
+  //Main card creation
+}
+
+export const TaskAndList = (
+  setSubtasks,
+  setSubtaskTitle,
+  setOpenSubtaskDialog,
+  subtaskTitle,
+  subtasks
+) => {
   const [openTaskDialog, setOpenTaskDialog] = useState(false);
-  const [taskTitle, setTaskTitle] = useState("");
-  const [tasks, setTasks] = useState([]);
+  const [name, setName] = useState("");
+  const [cards, setCards] = useState([]);
   const [openDrawer, setOpenDrawer] = useState(false);
 
   const handleTaskDialogOpen = () => {
@@ -140,29 +150,66 @@ export const TaskAndList = () => {
   };
 
   const handleTaskTitleChange = (event) => {
-    setTaskTitle(event.target.value);
+    setName(event.target.value);
   };
 
-  const handleCreateTask = () => {
-    if (taskTitle.trim() !== "") {
-      const newTask = {
-        id: Date.now(),
-        title: taskTitle,
-        subtasks: [],
-      };
-      setTasks([...tasks, newTask]);
-      setTaskTitle("");
+  useEffect(() => {
+    fetchCards();
+  }, []);
+
+  const fetchCards = async () => {
+    try {
+      const response = await fetch("http://localhost:30001/cards");
+      const data = await response.json();
+      setCards(data);
+    } catch (error) {
+      console.error("Error fetching cards:", error);
+    }
+  };
+
+  const deleteCard = async (cardId) => {
+    try {
+      await fetch(`http://localhost:30001/cards/delete/${cardId}`, {
+        method: "DELETE",
+        ...window.location.reload(false),
+      });
+      const updatedCards = cards.filter((card) => card.id !== cardId);
+      setCards(updatedCards);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
+
+  const handleCreateCard = async () => {
+    try {
+      const response = await fetch("http://localhost:30001/cards/card/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      });
+      const data = await response.json();
+      setCards([...cards, data]);
       setOpenTaskDialog(false);
+      setName("");
+    } catch (error) {
+      console.error("Error creating card:", error);
     }
   };
   const toggleDrawer = () => {
     setOpenDrawer(!openDrawer);
   };
 
-  const deleteTask = (taskId) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
-  };
-  // console.log(Sidenav)
+  {
+    /* 
+    Subtask Functions
+    */
+  }
+
+  {
+    //Card related CSS
+  }
   return (
     <>
       <Sidenav open={openDrawer} onClose={toggleDrawer} />
@@ -172,11 +219,12 @@ export const TaskAndList = () => {
           gap={10}
           sx={{ marginTop: "120px", marginLeft: "200px" }}
         >
-          {tasks.map((task, index) => (
+          {cards.map((card, index) => (
             <Grid item key={index} xs={12} sm={6} md={3}>
               <TaskCard
-                title={task.title}
-                onDelete={() => deleteTask(task.id)}
+                title={card.name}
+                onDelete={() => deleteCard(card._id)}
+                onAddSubtask={() => handleCreateSubtask(card._id)}
               />
             </Grid>
           ))}
@@ -208,7 +256,7 @@ export const TaskAndList = () => {
               label="Task Title"
               type="text"
               fullWidth
-              value={taskTitle}
+              value={name}
               onChange={handleTaskTitleChange}
             />
           </DialogContent>
@@ -216,7 +264,7 @@ export const TaskAndList = () => {
             <Button onClick={handleTaskDialogClose} color="primary">
               Cancel
             </Button>
-            <Button onClick={handleCreateTask} color="primary">
+            <Button onClick={handleCreateCard} color="primary">
               Create
             </Button>
           </DialogActions>
@@ -225,134 +273,3 @@ export const TaskAndList = () => {
     </>
   );
 };
-// const mongoose = require("mongoose");
-
-// // Define the card property schema
-// const cardPropertySchema = new mongoose.Schema({
-//   tlx: { type: Number, required: true },
-//   tly: { type: Number, required: true },
-//   height: { type: Number, required: true },
-//   width: { type: Number, required: true },
-// });
-
-// // Define the schema for image cards
-// const imagecardSchema = new mongoose.Schema({
-//   imageURL: String,
-//   cardProperties: cardPropertySchema,
-// });
-
-// // Define the schema for text cards
-// const textcardSchema = new mongoose.Schema({
-//   text: String,
-//   cardProperties: cardPropertySchema,
-// });
-
-// // Define the schema for tasks within todo lists
-// const taskSchema = new mongoose.Schema({
-//   // card : ObjectId (Initially Null)
-//   task: { String, required: true },
-//   checked: { Boolean, required: true },
-// });
-
-// // Define the schema for todo list cards
-// const todolistcardSchema = new mongoose.Schema({ //CARD
-      //Add title(of card)
-//   todolist: [taskSchema],
-//   cardProperties: cardPropertySchema,
-// });
-
-// // Define the schema for the card model
-// const cardSchema = new mongoose.Schema(
-//   {
-//     // add title
-//     parent: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }],
-//     editor: [{ type: String }],
-//     access: [{ type: String }],
-//     cards: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }],
-//     images: [imagecardSchema],
-//     textboxes: [textcardSchema], 
-//     todolists: [todolistcardSchema], 
-//     cardProperties: cardPropertySchema,
-//   },
-//   {
-//     toJSON: { virtuals: true }, // Ensure virtuals are included when document is converted to JSON
-//     toObject: { virtuals: true }, // Ensure virtuals are included when document is converted to a plain JavaScript object
-//   }
-// );
-
-// // Define virtual field for nested cards
-// cardSchema.virtual("childrenCards", {
-//   ref: "Card",
-//   localField: "_id",
-//   foreignField: "parentCard",
-// });
-
-// // Create the Card model
-// const Card = mongoose.model("Card", cardSchema);
-
-// module.exports = Card;
-// const mongoose = require("mongoose");
-
-// // Define the card property schema
-// const cardPropertySchema = new mongoose.Schema({
-//   tlx: { type: Number, required: true },
-//   tly: { type: Number, required: true },
-//   height: { type: Number, required: true },
-//   width: { type: Number, required: true },
-// });
-
-// // Define the schema for image cards
-// const imagecardSchema = new mongoose.Schema({
-//   imageURL: String,
-//   cardProperties: cardPropertySchema,
-// });
-
-// // Define the schema for text cards
-// const textcardSchema = new mongoose.Schema({
-//   text: String,
-//   cardProperties: cardPropertySchema,
-// });
-
-// // Define the schema for tasks within todo lists
-// const taskSchema = new mongoose.Schema({
-//   // card : ObjectId (Initially Null)
-//   task: { String, required: true },
-//   checked: { Boolean, required: true },
-// });
-
-// // Define the schema for todo list cards
-// const todolistcardSchema = new mongoose.Schema({
-//   todolist: [taskSchema],
-//   cardProperties: cardPropertySchema,
-// });
-
-// // Define the schema for the card model
-// const cardSchema = new mongoose.Schema(
-//   {
-//     // add title
-//     parent: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }],
-//     editor: [{ type: String }],
-//     access: [{ type: String }],
-//     cards: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }],
-//     images: [imagecardSchema],
-//     textboxes: [textcardSchema],
-//     todolists: [todolistcardSchema],
-//     cardProperties: cardPropertySchema,
-//   },
-//   {
-//     toJSON: { virtuals: true }, // Ensure virtuals are included when document is converted to JSON
-//     toObject: { virtuals: true }, // Ensure virtuals are included when document is converted to a plain JavaScript object
-//   }
-// );
-
-// // Define virtual field for nested cards
-// cardSchema.virtual("childrenCards", {
-//   ref: "Card",
-//   localField: "_id",
-//   foreignField: "parentCard",
-// });
-
-// // Create the Card model
-// const Card = mongoose.model("Card", cardSchema);
-
-// module.exports = Card;

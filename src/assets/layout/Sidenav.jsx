@@ -1,29 +1,46 @@
-import React from 'react';
-import { Drawer, Box, Typography, Divider, Button } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { FaBars } from "react-icons/fa";
+import { AiOutlineClose } from "react-icons/ai";
+import { SidebarData } from "./SideBarData"; // Assuming you have a file named 'SideBarData.js' exporting SidebarData
+import "./SideNavBar.css";
 
- const Sidenav = ({ open, onClose }) => {
+function SideNavBar() {
+  const [opensidebar, setopensidebar] = useState(false);
+
+  const showSidebar = () => {
+    setopensidebar(true);
+  };
+
+  const closeSidebar = () => {
+    setopensidebar(false);
+  };
+
   return (
-    <Drawer
-      sx={{        
-        width: 240,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: 240,
-          boxSizing: 'border-box',
-        },
-      }}      
-      open={open}
-      onClose={onClose}
-    >
-      <Box sx={{ width: 240, padding: '16px', color:'black'}}>
-        <Typography variant="h6" gutterBottom>
-            Menu
-        </Typography>
-        <Divider />
-        {/* <MenuItem></MenuItem> */}
-      </Box>
-    </Drawer>
+    <>
+      <div className="navBar">
+        <Link to="#" className="menu-bars">
+          <FaBars onClick={showSidebar} />
+        </Link>
+      </div>
+      <nav className={opensidebar ? "nav-menu active" : "nav-menu"}>
+        <ul className="nav-menu-items">
+          <li className="navbar-toggle">
+            <Link to="#" className="menu-bars">
+              <AiOutlineClose onClick={closeSidebar} />
+            </Link>
+          </li>
+          {SidebarData.map((item, index) => (
+            <li key={index} className={item.cName}>
+              <Link to={item.path}>
+                <span>{item.title}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </>
   );
-};
-export default Sidenav;
+}
+
+export default SideNavBar;
